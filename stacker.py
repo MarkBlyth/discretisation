@@ -13,7 +13,7 @@ class NotEnoughPeriodsError(Exception):
     pass
 
 
-def _autocorrelation_F0_estimate(scalar_series, FFT=False):
+def autocorrelation_F0_estimate(signal_y, FFT=False):
     """Estimate the number of cycles in a given signal from the first
     zero of the autocorrelation function. The autocorrelation function
     acf(X,n) gives the correlation between time series entry x_i, and
@@ -24,7 +24,7 @@ def _autocorrelation_F0_estimate(scalar_series, FFT=False):
     estimate of F0. Note that this requires the data to be sampled at
     consistent time intervals!
 
-        scalar_series : float array
+        signal_y : float array
             1d array of time series data, containing the signal
             that we wish to estimate the fundamental frequency of
 
@@ -38,16 +38,16 @@ def _autocorrelation_F0_estimate(scalar_series, FFT=False):
                                 periods to accurately estimate the
                                 fundamental frequency
 
-        ValueError : raised when scalar_series cannot be cast to a 1d
+        ValueError : raised when signal_y cannot be cast to a 1d
                     array
 
     Returns a float, representing the number of cycles estimated to
     take place across the signal.
     """
-    ts_data = np.array(scalar_series, dtype=float)
+    ts_data = np.array(signal_y, dtype=float)
     if not len(ts_data.shape) == 1:
         raise ValueError(
-            "scalar_series must be a 1-dimensional array-like object")
+            "signal_y must be a 1-dimensional array-like object")
     # Start off with just one lag
     n_lags = 1
     contains_zero = False
@@ -68,13 +68,13 @@ def _autocorrelation_F0_estimate(scalar_series, FFT=False):
     return ts_data.shape[0] / (4 * (first_zero + 1))
 
 
-def _fast_nls_F0_estimate(scalar_series, estimated_cycles, n_harmonics=10):
+def fast_nls_F0_estimate(signal_y, estimated_cycles, n_harmonics=10):
     """Estimate the number of cycles in a given signal, using the
     fastNLS algorithm. Gives a higher accuracy and more robustness to
     noise than correlation-based methods, at the expense of requiring
     a reasonable fundamental frequency estimate to work from.
 
-        scalar_series : float array
+        signal_y : float array
             1d array of time series data, containing the signal
             that we wish to estimate the fundamental frequency of
 
@@ -91,7 +91,7 @@ def _fast_nls_F0_estimate(scalar_series, estimated_cycles, n_harmonics=10):
         ValueError : estimated_cycles cannot be cast as a 2-element
                     float array
 
-        ValueError : raised when scalar_series cannot be cast to a 1d
+        ValueError : raised when signal_y cannot be cast to a 1d
                     array
 
         UserWarning : the signal is estimated to contain fewer than
@@ -115,11 +115,11 @@ def _fast_nls_F0_estimate(scalar_series, estimated_cycles, n_harmonics=10):
         warnings.warn(
             "Period estimation can become unreliable on data containing few cycles"
         )
-    # Check scalar_series
-    ts_data = np.array(scalar_series)
+    # Check signal_y
+    ts_data = np.array(signal_y)
     if not len(ts_data.shape) == 1:
         raise ValueError(
-            "scalar_series must be a 1-dimensional array-like object")
+            "signal_y must be a 1-dimensional array-like object")
     # Estimate fundamental frequency
     sampling_freq = ts_data.shape[0]
     bounds = f0_bounds / (2 * sampling_freq)
@@ -129,13 +129,13 @@ def _fast_nls_F0_estimate(scalar_series, estimated_cycles, n_harmonics=10):
     return estimate
 
 
-def _get_n_periods(scalar_series, padding=20, n_harmonics=20, FFT=True, skip_NLS=False):
+def get_n_periods(signal_y, padding=20, n_harmonics=20, FFT=True, skip_NLS=False):
     """Estimate the number of cycles in a periodic time series. First
     uses autocorrelation methods to get a loose estimate of the
     answer; this is then refined using a fast nonlinear least squares
     method.
 
-        scalar_series : float array
+        signal_y : float array
             1d array of time series data, containing the signal
             that we wish to estimate the fundamental frequency of
 
@@ -158,7 +158,7 @@ def _get_n_periods(scalar_series, padding=20, n_harmonics=20, FFT=True, skip_NLS
 
     Raises the following:
 
-        ValueError : raised when scalar_series cannot be cast to a 1d
+        ValueError : raised when signal_y cannot be cast to a 1d
                     array
 
         ValueError : raised when padding is not between 0 and 100
@@ -172,11 +172,11 @@ def _get_n_periods(scalar_series, padding=20, n_harmonics=20, FFT=True, skip_NLS
 
     Returns a float estimating the number of periods in the signal.
     """
-    # Check scalar_series
-    ts_data = np.array(scalar_series)
+    # Check signal_y
+    ts_data = np.array(signal_y)
     if not len(ts_data.shape) == 1:
         raise ValueError(
-            "scalar_series must be a 1-dimensional array-like object")
+            "signal_y must be a 1-dimensional array-like object")
     if not 0 < padding <= 100:
         raise ValueError("padding must be between 0 and 100")
     if not n_harmonics > 0:
@@ -184,19 +184,19 @@ def _get_n_periods(scalar_series, padding=20, n_harmonics=20, FFT=True, skip_NLS
     if not isinstance(n_harmonics, int):
         raise TypeError("n_harmonics must be int")
     # Form an estimate of the fundamental frequency using autocorrelation
-    acf_F0 = _autocorrelation_F0_estimate(scalar_series, FFT)
+    acf_F0 = autocorrelation_F0_estimate(signal_y, FFT)
     if skip_NLS:
         return acf_F0
     # Use this estimate to form bounds for NLS method
     bounds = np.array(
         [acf_F0 - padding / 100 * acf_F0, acf_F0 + padding / 100 * acf_F0]
     )
-    nls_F0 = _fast_nls_F0_estimate(ts_data, bounds, n_harmonics)
+    nls_F0 = fast_nls_F0_estimate(ts_data, bounds, n_harmonics)
     return nls_F0
 
 
 def stack_periods(
-    scalar_series,
+    signal_y,
     t_range=None,
     sorted=False,
     padding=20,
@@ -210,17 +210,17 @@ def stack_periods(
     datapoint all lie within the same period. This effectively takes
     each cycle and stacks them on top of each other.
 
-        scalar_series : float array
+        signal_y : float array
             1d array of time series data, containing the signal
             that we wish to estimate the fundamental frequency of
 
         t_range : float
-            Time-range over which scalar_series was recorded. If None,
+            Time-range over which signal_y was recorded. If None,
             time is rescaled to the unit interval. If set, time is
             retained as period time.
 
         sorted : bool
-            Whether or not to sort the resulting t, scalar_series
+            Whether or not to sort the resulting t, signal_y
             arrays.
 
         padding : float
@@ -246,7 +246,7 @@ def stack_periods(
                     4 full cycles; using too few cycles may result in
                     an unreliable F0 estimate
 
-        ValueError : raised when scalar_series cannot be cast to a 1d
+        ValueError : raised when signal_y cannot be cast to a 1d
                     array
 
         ValueError : raised when padding is not between 0 and 100
@@ -256,17 +256,17 @@ def stack_periods(
 
         TypeError : if n_harmonics is not an int
 
-    Returns scalar_series, ts for the stacked signal. scalar_series
+    Returns signal_y, ts for the stacked signal. signal_y
     remains unchanged if sorted is False.
     """
-    n_periods = _get_n_periods(
-        scalar_series, padding, n_harmonics, FFT, skip_NLS)
+    n_periods = get_n_periods(
+        signal_y, padding, n_harmonics, FFT, skip_NLS)
     if t_range is None:
-        ts = np.mod(np.linspace(0, n_periods, len(scalar_series)), 1)
+        ts = np.mod(np.linspace(0, n_periods, len(signal_y)), 1)
     else:
         ts = np.mod(np.linspace(0, t_range, len(
-            scalar_series)), t_range / n_periods)
+            signal_y)), t_range / n_periods)
     if not sorted:
-        return ts, scalar_series
+        return ts, signal_y
     sort_indices = np.argsort(ts)
-    return ts[sort_indices], scalar_series[sort_indices]
+    return ts[sort_indices], signal_y[sort_indices]
