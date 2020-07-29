@@ -110,7 +110,10 @@ def get_interior_knots(data_x, data_y, n_knots, n_tries=50):
 
     def loss(knotvec):
         try:
-            model = get_splinemodel_from_data(data_x, data_y, knotvec)
+            full_spline = scipy.interpolate.splrep(data_x, data_y, t=np.sort(
+                knotvec), per=True, xb=data_min, xe=data_max)
+
+            def model(x): return scipy.interpolate.splev(x, full_spline)
             residuals = data_y - model(data_x)
             return np.dot(residuals, residuals)
         except ValueError:
