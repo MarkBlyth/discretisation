@@ -83,14 +83,14 @@ def make_periodic_model(func, period=1):
     return lambda x: func(np.mod(x, period))
 
 
-def get_interior_knots(data_x, data_y, n_knots, n_tries=50):
+def get_full_knots(data_x, data_y, n_knots, n_tries=50):
     """
-    Given some periodic data, find the set of interior knots that
-    provide a best-possible periodic splines model to the data. This
-    is done by starting with a randomly distributed set of knots, then
-    attempting a numerical optimization on the knot set, to maximise
-    goodness-of-fit. To avoid local minima, this procedure is repeated
-    numerous times, with the best knots being recorded.
+    Given some periodic data, find the set of interior and exterior
+    knots that provide a best-possible periodic splines model to the
+    data. This is done by starting with a randomly distributed set of
+    knots, then attempting a numerical optimization on the knot set,
+    to maximise goodness-of-fit. To avoid local minima, this procedure
+    is repeated numerous times, with the best knots being recorded.
 
         data_x : 1-by-n float array
             Time-like variable for the signal; rescaled to a single
@@ -105,6 +105,9 @@ def get_interior_knots(data_x, data_y, n_knots, n_tries=50):
         n_tries : int > 0
             Number of times to restart the optimisation, to avoid
             local minima. More is better, but slower.
+
+    Returns a full knot vector (interor and exterior knots) that
+    produces the lowest-residual splines fit to the provided data.
     """
     data_min, data_max = np.min(data_x), np.max(data_x)
 
@@ -131,4 +134,6 @@ def get_interior_knots(data_x, data_y, n_knots, n_tries=50):
         if opti.fun < best_loss:
             best_loss = opti.fun
             best_knots = opti.x
-    return best_knots
+    full_knots, _, _ = scipy.interpolate.splrep(
+        data_x, data_y, t=np.sort(best_knots), per=True, xb=data_min, xe=data_max)
+    return full_knots
