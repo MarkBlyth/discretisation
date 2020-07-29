@@ -1,3 +1,4 @@
 from .splines import *
-from .stacker import stack_periods
+from .stacker import *
+from .discretisors import *
 from .fourier import *
