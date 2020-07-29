@@ -35,7 +35,7 @@ def get_splinemodel_from_discretisation(discretisation, full_knots, period=None)
     return model if period is None else make_periodic_model(model, period)
 
 
-def get_spline_discretisation_from_data(data_x, data_y, full_knots):
+def get_spline_discretisation_from_data(data_x, data_y, full_knots, t_range=None):
     """
     Given some data and a set of full knots (interior and exterior),
     find the BSpline coefficients that discretise the data. data_x and
@@ -54,10 +54,19 @@ def get_spline_discretisation_from_data(data_x, data_y, full_knots):
             Position of the splines knots; interior and exterior knots
             must be provided
 
+        t_range : 2-tuple of floats (lower, upper)
+            Minimum and maximum value of the range in which the
+            training data lie. Useful for when we don't have a
+            datapoint on either end of the range we want to model.
+            Defaults to t_min, t_max.
+
     Returns a 1-by-k float array of the BSpline coefficients that
     discretise the data.
     """
-    data_min, data_max = np.min(data_x), np.max(data_x)
+    if t_range is None:
+        data_min, data_max = np.min(data_x), np.max(data_x)
+    else:
+        data_min, data_max = t_range
     interior_knots = full_knots[4:-4]  # splrep recalculates exterior
     # knots, so drop them here. This shouldn't be an issue since
     # exterior knots were previously calculated with splrep, and it'll
@@ -86,7 +95,7 @@ def make_periodic_model(func, period=1):
     return lambda x: func(np.mod(x, period))
 
 
-def get_full_knots(data_x, data_y, n_knots, n_tries=50):
+def get_full_knots(data_x, data_y, n_knots, n_tries=50, t_range=None):
     """
     Given some periodic data, find the set of interior and exterior
     knots that provide a best-possible periodic splines model to the
@@ -109,10 +118,19 @@ def get_full_knots(data_x, data_y, n_knots, n_tries=50):
             Number of times to restart the optimisation, to avoid
             local minima. More is better, but slower.
 
+        t_range : 2-tuple of floats (lower, upper)
+            Minimum and maximum value of the range in which the
+            training data lie. Useful for when we don't have a
+            datapoint on either end of the range we want to model.
+            Defaults to t_min, t_max.
+
     Returns a full knot vector (interor and exterior knots) that
     produces the lowest-residual splines fit to the provided data.
     """
-    data_min, data_max = np.min(data_x), np.max(data_x)
+    if t_range is None:
+        data_min, data_max = np.min(data_x), np.max(data_x)
+    else:
+        data_min, data_max = t_range
 
     def loss(knotvec):
         try:
