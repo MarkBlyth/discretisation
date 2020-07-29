@@ -35,13 +35,13 @@ def get_splinemodel_from_discretisation(discretisation, full_knots, period=None)
     return model if period is None else make_periodic_model(model, period)
 
 
-def get_spline_discretisation_from_data(data_x, data_y, interior_knots):
+def get_spline_discretisation_from_data(data_x, data_y, full_knots):
     """
-    Given some data and a set of interior knots, find the BSpline
-    coefficients that discretise the data. data_x and data_y are
-    arrays of the x and y variables of the signal, with the x variable
-    relabled down to a single period. Appropriate data formatting can
-    be computed with the stacker submodule.
+    Given some data and a set of full knots (interior and exterior),
+    find the BSpline coefficients that discretise the data. data_x and
+    data_y are arrays of the x and y variables of the signal, with the
+    x variable relabled down to a single period. Appropriate data
+    formatting can be computed with the stacker submodule.
 
         data_x : 1-by-n float array
             Time-like variable for the signal; rescaled to a single
@@ -50,18 +50,15 @@ def get_spline_discretisation_from_data(data_x, data_y, interior_knots):
         data_y : 1-by-n float array
             Dependent variable for the signal
 
-        interior_knots : 1-by-k float array
-            Position of the interior splines knots; exterior knots are
-            added automatically.
+        full_knots : 1-by-k float array
+            Position of the splines knots; interior and exterior knots
+            must be provided
 
-    Returns a 1-by-k float array of the full set of knots (both
-    interior and exterior), and the BSpline coefficients that
+    Returns a 1-by-k float array of the BSpline coefficients that
     discretise the data.
     """
-    full_knots, betas, _ = scipy.interpolate.splrep(
-        data_x, data_y, t=np.sort(interior_knots), per=True
-    )
-    return full_knots, betas
+    bspline_obj = scipy.interpolate.make_lsq_spline(data_x, data_y, full_knots)
+    return bspline_obj.c
 
 
 def make_periodic_model(func, period=1):
