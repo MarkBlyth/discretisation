@@ -4,36 +4,6 @@ import scipy.optimize
 import numpy as np
 
 
-def get_splinemodel_from_data(data_x, data_y, interior_knots):
-    """
-    Given some data and a set of interior knots, fit a cubic periodic
-    splines model, and return a function that evaluates it. data_x and
-    data_y are arrays of the x and y variables of the signal, with the
-    x variable relabled down to a single period. Appropriate data
-    formatting can be computed with the stacker submodule.
-
-        data_x : 1-by-n float array
-            Time-like variable for the signal; rescaled to a single
-            period.
-
-        data_y : 1-by-n float array
-            Dependent variable for the signal
-
-        interior_knots : 1-by-k float array
-            Position of the interior splines knots; exterior knots are
-            added automatically.
-
-    Returns a function that evaluates the fitted splines model across
-    the range of the input data. To extrapolate periodically beyond
-    the range of the data, the make_periodic_model function can be
-    used.
-    """
-    spline = scipy.interpolate.splrep(
-        data_x, data_y, t=np.sort(interior_knots), per=True
-    )
-    return lambda x: scipy.interpolate.splev(x, spline)
-
-
 def get_splinemodel_from_discretisation(discretisation, full_knots, period=None):
     """
     Given a discretisation and a full set of knots, fit a cubic

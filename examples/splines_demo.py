@@ -55,13 +55,10 @@ opti_knots = splines.get_interior_knots(
     stacked_ts, stacked_ys, n_knots=N_KNOTS, n_tries=50
 )
 
-# Fit a splines model
-model = splines.get_splinemodel_from_data(stacked_ts, stacked_ys, opti_knots)
-
-# Alternatively and equivalently, find a discretisation and build a
-# model from that. This produces a new set of knots, which contain
-# both the optimised interior knots, and the necessary endpoint knots
-# required to build a periodic splines model.
+# Find a discretisation and build a model from that. This produces a
+# new set of knots, which contain both the optimised interior knots,
+# and the necessary endpoint knots required to build a periodic
+# splines model.
 full_knots, discretisation = splines.get_spline_discretisation_from_data(
     stacked_ts, stacked_ys, opti_knots
 )
