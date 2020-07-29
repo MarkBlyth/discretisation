@@ -115,7 +115,7 @@ def get_full_knots(data_x, data_y, n_knots, n_tries=50):
 
             def model(x): return scipy.interpolate.splev(x, full_spline)
             residuals = data_y - model(data_x)
-            return np.dot(residuals, residuals)
+            return np.linalg.norm(residuals)
         except ValueError:
             return np.inf
 
