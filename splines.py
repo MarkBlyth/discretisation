@@ -67,12 +67,12 @@ def get_spline_discretisation_from_data(data_x, data_y, full_knots, t_range=None
         data_min, data_max = np.min(data_x), np.max(data_x)
     else:
         data_min, data_max = t_range
-    interior_knots = full_knots[4:-4]  # splrep recalculates exterior
+    interior_knots = np.sort(full_knots)[4:-4]  # splrep recalculates exterior
     # knots, so drop them here. This shouldn't be an issue since
     # exterior knots were previously calculated with splrep, and it'll
     # recalculate the same knots every time
-    _, betas, _ = scipy.interpolate.splrep(data_x, data_y, t=np.sort(
-        interior_knots), per=True, xb=data_min, xe=data_max)
+    _, betas, _ = scipy.interpolate.splrep(data_x, data_y, t=interior_knots,
+                                           per=True, xb=data_min, xe=data_max)
     return betas
 
 
