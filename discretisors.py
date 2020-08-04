@@ -1,6 +1,6 @@
-import fourier
-import stacker
-import splines
+from . import fourier
+from . import stacker
+from . import splines
 import numpy as np
 import scipy.optimize
 import abc
